@@ -61,6 +61,10 @@ connectDB()
 
 const PORT = process.env.PORT || 8080; // Use port from environment variable or default to 8080
 
+app.get('/', (req, res) => {
+  res.send('Welcome to my MongoDB API!'); // Respond with a welcome message
+});
+
 app.listen(PORT, () => {
   console.log("Server is running on Port " + PORT);
 });
