@@ -1,8 +1,5 @@
 const axios = require('axios');
-const express = require('express');
-const connectDB = require('./connectMONGO'); 
-
-const app = express(); // Initialize Express app
+const connectDB = require('./connectMongo'); // Adjusted require statement to match filename
 
 // First API endpoint URL
 const firstApiUrl = 'http://103.250.149.178:9292/token';
@@ -49,8 +46,3 @@ connectDB()
     console.error('Error connecting to MongoDB:', error.message);
   });
 
-const PORT = process.env.PORT; // Default to port 3000 if PORT environment variable is not set
-
-app.listen(PORT, () => {
-  console.log("Server is running on Port " + PORT);
-});
