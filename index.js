@@ -1,5 +1,20 @@
 const axios = require('axios');
-const connectDB = require('./connectMONGO'); // Adjusted require statement to match filename
+
+require('dotenv').config(); // Load environment variables from .env file
+const mongoose = require('mongoose');
+
+const connectDB = async () => {
+ try{
+    await mongoose.connect(process.env.MONGODB_CONNECT_URI);
+    console.log("Connected to MongoDB successfully");
+ }catch(error){
+    console.error("Connect failed: " + error.message);
+ }
+}
+
+module.exports = connectDB;
+ // Adjusted require statement to match filename
+// Adjusted require statement to match filename
 
 // First API endpoint URL
 const firstApiUrl = 'http://103.250.149.178:9292/token';
