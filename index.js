@@ -3,70 +3,74 @@ const axios = require('axios');
 require('dotenv').config(); // Load environment variables from .env file
 const mongoose = require('mongoose');
 
-const connectDB = async () => {
- try{
-    await mongoose.connect(process.env.MONGODB_CONNECT_URI);
-    console.log("Connected to MongoDB successfully");
- } catch(error){
-    console.error("Connect failed: " + error.message);
- }
-}
-
 const app = express(); // Initialize Express
 
-// First API endpoint URL
-const firstApiUrl = 'http://103.250.149.178:9292/token';
+// Connect to MongoDB
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_CONNECT_URI);
+    console.log("Connected to MongoDB successfully");
+  } catch (error) {
+    console.error("Connect failed: " + error.message);
+  }
+}
 
-// First API credentials
-const firstApiCredentials = new URLSearchParams();
-firstApiCredentials.append('username', '662');
-firstApiCredentials.append('password', '662shivapi');
-firstApiCredentials.append('grant_type', 'password');
+// Fetch data from the second API
+const fetchDataFromSecondApi = async () => {
+  try {
+    const firstApiUrl = 'http://103.250.149.178:9292/token';
+    const firstApiCredentials = {
+      username: '662',
+      password: '662shivapi',
+      grant_type: 'password'
+    };
+    const response = await axios.post(firstApiUrl, firstApiCredentials);
+    const accessToken = response.data.access_token;
+    const secondApiUrl = 'http://103.250.149.178:9292/api/DToW/StockList?dt';
+    const secondApiResponse = await axios.get(secondApiUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+    return secondApiResponse.data;
+  } catch (error) {
+    console.error('Error fetching data from second API:', error.message);
+    throw error;
+  }
+}
 
-// Second API endpoint URL
-const secondApiUrl = 'http://103.250.149.178:9292/api/DToW/StockList?dt';
+// Periodically fetch data from the second API and broadcast it to connected clients
+const broadcastDataUpdate = async () => {
+  try {
+    const data = await fetchDataFromSecondApi();
+    io.emit('dataUpdate', data); // Broadcast data update to all connected clients
+    console.log('Data update broadcasted:', data);
+  } catch (error) {
+    console.error('Error broadcasting data update:', error.message);
+  }
+}
 
-// Call connectDB function to establish connection to MongoDB
-connectDB()
-  .then(() => {
-    axios.post(firstApiUrl, firstApiCredentials)
-      .then(response => {
-        // Extract the access token from the response
-        const accessToken = response.data.access_token;
-
-        // Make GET request to second API with the obtained token as Bearer token
-        axios.get(secondApiUrl, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        })
-        .then(response => {
-          // Log the response from the second API
-
-          app.get('/', (req, res) => {
-            res.send(response.data); // Respond with a welcome message
-          });
-          console.log(response.data);
-        })
-        .catch(error => {
-          // Handle error from second API
-          console.error('Error:', error.message);
-        });
-      })
-      .catch(error => {
-        // Handle error from first API
-        console.error('Error:', error.message);
-      });
-  })
-  .catch(error => {
-    // Handle connection error
-    console.error('Error connecting to MongoDB:', error.message);
-  });
-
-const PORT = process.env.PORT || 8080; // Use port from environment variable or default to 8080
-
-
-
-app.listen(PORT, () => {
+// Start server
+const PORT = process.env.PORT || 8080;
+const server = app.listen(PORT, () => {
   console.log("Server is running on Port " + PORT);
 });
+
+// WebSocket setup
+const socketIo = require('socket.io');
+const io = socketIo(server);
+
+// WebSocket connection handling
+io.on('connection', (socket) => {
+  console.log('A client connected');
+  socket.on('disconnect', () => {
+    console.log('A client disconnected');
+  });
+});
+
+// Connect to MongoDB
+connectDB();
+
+// Periodically broadcast data update
+const INTERVAL_TIME_MS = 10000; // Interval time in milliseconds (e.g., every 10 seconds)
+setInterval(broadcastDataUpdate, INTERVAL_TIME_MS);
