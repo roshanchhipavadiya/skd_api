@@ -1,5 +1,5 @@
 const axios = require('axios');
-const connectDB = require('./connectMongo'); // Adjusted require statement to match filename
+const connectDB = require('./connectMONGO'); // Adjusted require statement to match filename
 
 // First API endpoint URL
 const firstApiUrl = 'http://103.250.149.178:9292/token';
