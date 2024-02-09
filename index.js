@@ -1,9 +1,13 @@
+const functions = require('firebase-functions');
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
 const app = express();
+
+// Define the port number
+const PORT = process.env.PORT || 8080;
 
 // Connect to MongoDB
 const connectDB = async () => {
@@ -19,10 +23,10 @@ const connectDB = async () => {
 const fetchAccessToken = async () => {
     try {
         const firstApiUrl = 'http://103.250.149.178:9292/token';
-const firstApiCredentials = new URLSearchParams();
-firstApiCredentials.append('username', '662');
-firstApiCredentials.append('password', '662shivapi');
-firstApiCredentials.append('grant_type', 'password');
+        const firstApiCredentials = new URLSearchParams();
+        firstApiCredentials.append('username', '662');
+        firstApiCredentials.append('password', '662shivapi');
+        firstApiCredentials.append('grant_type', 'password');
         const response = await axios.post(firstApiUrl, firstApiCredentials);
         return response.data.access_token;
     } catch (error) {
@@ -48,26 +52,21 @@ const fetchDataFromSecondApi = async () => {
     }
 }
 
-// Start server
-const PORT = process.env.PORT || 8080;
-const server = app.listen(PORT, () => {
-    console.log("Server is running on Port " + PORT);
-});
-
 // Connect to MongoDB
 connectDB();
 
-// Periodically fetch data from the second API and log it
-const INTERVAL_TIME_MS = 5000; // Interval time in milliseconds (e.g., every 10 seconds)
-setInterval(async () => {
+// Fetch data from the second API and log it
+(async () => {
     try {
         const data = await fetchDataFromSecondApi();
-        app.get('/stocklist', (req, res) => {
-          res.send(data); // Respond with a welcome message
-        });
+        app.get('/', (req, res) => {
+            res.send(data); // Respond with a welcome message
+          });
         console.log('Data from second API:', data);
-
     } catch (error) {
         console.error('Error fetching data:', error.message);
     }
-}, INTERVAL_TIME_MS);
+})();
+
+// Define the HTTP function for Firebase
+exports.api = functions.https.onRequest(app);
