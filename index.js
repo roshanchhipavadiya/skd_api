@@ -1,89 +1,72 @@
-const express = require('express');
+const express = require('express'); // Import Express
 const axios = require('axios');
-require('dotenv').config();
+require('dotenv').config(); // Load environment variables from .env file
 const mongoose = require('mongoose');
 
-const app = express();
-
-// Connect to MongoDB
 const connectDB = async () => {
-  try {
+ try{
     await mongoose.connect(process.env.MONGODB_CONNECT_URI);
     console.log("Connected to MongoDB successfully");
-  } catch (error) {
+ } catch(error){
     console.error("Connect failed: " + error.message);
-    throw error; // Throw error to stop further execution
-  }
+ }
 }
 
-// Function to fetch data from the first API
-const fetchFirstApiData = async () => {
-  try {
-    console.log("Fetching data from the first API...");
-    const firstApiUrl = 'http://103.250.149.178:9292/token';
-    const firstApiCredentials = {
-      username: '662',
-      password: '662shivapi',
-      grant_type: 'password'
-    };
-    const response = await axios.post(firstApiUrl, firstApiCredentials);
-    console.log("Data fetched from the first API:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching data from first API:', error.message);
-    throw new Error('Error fetching data from first API: ' + error.message);
-  }
-}
+const app = express(); // Initialize Express
 
-// Function to fetch data from the second API
-const fetchSecondApiData = async (accessToken) => {
-  try {
-    console.log("Fetching data from the second API...");
-    const secondApiUrl = 'http://103.250.149.178:9292/api/DToW/StockList?dt';
-    const response = await axios.get(secondApiUrl, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    });
-    console.log("Data fetched from the second API:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching data from second API:', error.message);
-    throw new Error('Error fetching data from second API: ' + error.message);
-  }
-}
+// First API endpoint URL
+const firstApiUrl = 'http://103.250.149.178:9292/token';
 
-// Define route to handle requests
-app.get('/', async (req, res) => {
-  try {
-    // Connect to MongoDB
-    await connectDB();
+// First API credentials
+const firstApiCredentials = new URLSearchParams();
+firstApiCredentials.append('username', '662');
+firstApiCredentials.append('password', '662shivapi');
+firstApiCredentials.append('grant_type', 'password');
 
-    // Fetch data from the first API
-    const firstApiData = await fetchFirstApiData();
+// Second API endpoint URL
+const secondApiUrl = 'http://103.250.149.178:9292/api/DToW/StockList?dt';
 
-    // Fetch access token from first API response
-    const accessToken = firstApiData.access_token;
+// Call connectDB function to establish connection to MongoDB
+connectDB()
+  .then(() => {
+    axios.post(firstApiUrl, firstApiCredentials)
+      .then(response => {
+        // Extract the access token from the response
+        const accessToken = response.data.access_token;
 
-    // Fetch data from the second API using access token
-    const secondApiData = await fetchSecondApiData(accessToken);
+        // Make GET request to second API with the obtained token as Bearer token
+        axios.get(secondApiUrl, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        })
+        .then(response => {
+          // Log the response from the second API
 
-    // Combine data from both APIs
-    const combinedData = {
-      firstApiData,
-      secondApiData
-    };
+          app.get('/', (req, res) => {
+            res.send(response.data); // Respond with a welcome message
+          });
+          console.log(response.data);
+        })
+        .catch(error => {
+          // Handle error from second API
+          console.error('Error:', error.message);
+        });
+      })
+      .catch(error => {
+        // Handle error from first API
+        console.error('Error:', error.message);
+      });
+  })
+  .catch(error => {
+    // Handle connection error
+    console.error('Error connecting to MongoDB:', error.message);
+  });
 
-    // Send the combined data as response
-    res.json(combinedData);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+const PORT = process.env.PORT || 8080; // Use port from environment variable or default to 8080
 
-// Start server
-const PORT = process.env.PORT || 8080;
+
+
 app.listen(PORT, () => {
   console.log("Server is running on Port " + PORT);
 });
