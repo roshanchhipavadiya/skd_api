@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "deploy": "npm ci && npm run build && firebase deploy --only functions",
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
