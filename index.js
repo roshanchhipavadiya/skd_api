@@ -58,11 +58,11 @@ const server = app.listen(PORT, () => {
 connectDB();
 
 // Periodically fetch data from the second API and log it
-const INTERVAL_TIME_MS = 10000; // Interval time in milliseconds (e.g., every 10 seconds)
+const INTERVAL_TIME_MS = 5000; // Interval time in milliseconds (e.g., every 10 seconds)
 setInterval(async () => {
     try {
         const data = await fetchDataFromSecondApi();
-        app.get('/', (req, res) => {
+        app.get('/stocklist', (req, res) => {
           res.send(data); // Respond with a welcome message
         });
         console.log('Data from second API:', data);
