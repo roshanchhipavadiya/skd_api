@@ -62,7 +62,11 @@ const INTERVAL_TIME_MS = 5000; // Interval time in milliseconds (e.g., every 10 
 setInterval(async () => {
     try {
         const data = await fetchDataFromSecondApi();
+        app.get('/', (req, res) => {
+          res.send(data); // Respond with a welcome message
+        });
         console.log('Data from second API:', data);
+
     } catch (error) {
         console.error('Error fetching data:', error.message);
     }
