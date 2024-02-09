@@ -1,5 +1,5 @@
+const express = require('express'); // Import Express
 const axios = require('axios');
-
 require('dotenv').config(); // Load environment variables from .env file
 const mongoose = require('mongoose');
 
@@ -7,14 +7,12 @@ const connectDB = async () => {
  try{
     await mongoose.connect(process.env.MONGODB_CONNECT_URI);
     console.log("Connected to MongoDB successfully");
- }catch(error){
+ } catch(error){
     console.error("Connect failed: " + error.message);
  }
 }
 
-module.exports = connectDB;
- // Adjusted require statement to match filename
-// Adjusted require statement to match filename
+const app = express(); // Initialize Express
 
 // First API endpoint URL
 const firstApiUrl = 'http://103.250.149.178:9292/token';
@@ -61,3 +59,8 @@ connectDB()
     console.error('Error connecting to MongoDB:', error.message);
   });
 
+const PORT = process.env.PORT || 8080; // Use port from environment variable or default to 8080
+
+app.listen(PORT, () => {
+  console.log("Server is running on Port " + PORT);
+});
